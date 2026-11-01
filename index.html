@@ -218,9 +218,11 @@ body{
   transition:opacity .15s;
 }
 #breach-flash.go{opacity:.9;}
+#dark-flash{position:fixed;inset:0;z-index:65;background:#000;opacity:0;pointer-events:none;transition:opacity .18s;}
+#dark-flash.go{opacity:.96;}
 
 /* ---------------------------- 4. 庆祝 ---------------------------- */
-#screen-celebrate{padding-top:calc(44px + env(safe-area-inset-top));padding-bottom:48px;overflow-y:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 26%, rgba(232,163,61,.12), transparent 62%);}
+#screen-celebrate{padding-top:calc(44px + env(safe-area-inset-top));padding-bottom:calc(48px + env(safe-area-inset-bottom));overflow-y:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 26%, rgba(232,163,61,.12), transparent 62%);}
 .celebrate-kicker{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--amber);margin-bottom:8px;}
 .celebrate-title{
   font-size:clamp(30px,9vw,52px);font-weight:900;letter-spacing:2px;
@@ -247,8 +249,8 @@ body{
   background:radial-gradient(circle at 10px 3px,#fff7e6 5px,transparent 6px);
   background-size:22px 12px;background-repeat:repeat-x;}
 .cake-plate{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:230px;height:16px;background:#33452a;border-radius:50%;box-shadow:0 6px 14px rgba(0,0,0,.5);}
-.cake-candles{position:absolute;bottom:104px;left:50%;transform:translateX(-50%);display:flex;gap:13px;z-index:3;}
-.candle{position:relative;width:10px;height:44px;cursor:pointer;}
+.cake-candles{position:absolute;bottom:104px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:3;}
+.candle{position:relative;width:34px;height:58px;cursor:pointer;}
 .candle .stick{
   position:absolute;bottom:0;left:50%;transform:translateX(-50%);
   width:8px;height:38px;border-radius:3px;
@@ -261,6 +263,8 @@ body{
   animation:flicker .18s alternate infinite;
 }
 @keyframes flicker{from{transform:translateX(-50%) scale(1);}to{transform:translateX(-50%) scale(.94) rotate(-2deg);}}
+.candle.dying .flame{animation:blow .32s ease-in forwards;}
+@keyframes blow{0%{transform:translateX(-50%) scale(1);opacity:1;}45%{transform:translateX(-58%) rotate(-20deg) scale(.85);opacity:1;}100%{transform:translateX(-72%) rotate(-38deg) scale(.15);opacity:0;}}
 .candle.out .flame{display:none;}
 .candle .smoke{
   position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
@@ -271,6 +275,8 @@ body{
 @keyframes smoke{0%{opacity:.8;transform:translate(-50%,0) scale(.6);}
   100%{opacity:0;transform:translate(-50%,-46px) scale(2);}}
 .candle-hint{font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:1px;margin-bottom:14px;}
+.candle-log{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:1px;min-height:16px;margin:2px 0 8px;}
+.candle-log b{color:var(--amber);}
 
 /* 祝福卡 */
 .wish-card{
@@ -320,8 +326,8 @@ body{
   font-family:"Segoe Script","Comic Sans MS","KaiTi","STKaiti",cursive;
   font-size:13px;color:#8a6a3a;letter-spacing:1px;
 }
-.photo-del{position:absolute;top:-9px;right:-9px;z-index:5;width:22px;height:22px;border-radius:50%;
-  background:#e0523f;color:#fff;font-size:12px;line-height:22px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+.photo-del{position:absolute;top:-12px;right:-12px;z-index:5;width:32px;height:32px;border-radius:50%;
+  background:#e0523f;color:#fff;font-size:15px;line-height:32px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
 .photo-add{display:flex;align-items:center;justify-content:center;min-height:150px;background:rgba(250,246,234,.1);border:1px dashed rgba(143,181,115,.55);box-shadow:none;transform:none !important;}
 .photo-add::before{display:none;}
 .photo-add-inner{color:var(--ink-dim);font-family:var(--mono);font-size:12px;letter-spacing:1px;text-align:center;line-height:1.9;}
@@ -376,6 +382,9 @@ body{
 }
 #btn-wish.show{display:block;}
 #btn-wish:active{transform:scale(.97);}
+#btn-relight{margin:14px auto 0;display:none;font-family:var(--mono);font-size:14px;letter-spacing:2px;color:var(--amber);background:rgba(232,163,61,.08);border:1px solid var(--amber);padding:11px 26px;cursor:pointer;font-weight:700;transition:.2s;}
+#btn-relight.show{display:block;}
+#btn-relight:active{transform:scale(.97);}
 
 /* 流星 */
 #shooting-star{position:fixed;top:-12%;left:-8%;z-index:56;font-size:42px;pointer-events:none;opacity:0;}
@@ -403,6 +412,9 @@ body{
   .boot-titlebar{font-size:10px;}
   #boot-text{font-size:12px;}
 }
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+}
 </style>
 </head>
 <body>
@@ -419,12 +431,13 @@ body{
 <div id="crosshair"><div class="dot"></div></div>
 <canvas id="fx"></canvas>
 <div id="breach-flash"></div>
+<div id="dark-flash"></div>
 <div id="bg-potatoes"></div>
 <div id="bg-stars"></div>
 <div id="killfeed"></div>
 <div id="danmaku"></div>
 <div id="shooting-star">🌠</div>
-<button id="btn-music">🎵 战歌</button>
+<button id="btn-music">🔊 音效 · 开</button>
 <div id="lightbox"><img id="lightbox-img" alt=""></div>
 <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
 
@@ -490,13 +503,15 @@ body{
       <div class="cake-plate"></div>
     </div>
   </div>
-  <div class="candle-hint">点击蜡烛 · 吹灭它们</div>
+  <div class="candle-log" id="candle-log"></div>
+  <div class="candle-hint">点击火苗 · 吹灭蜡烛</div>
 
   <div class="wish-card" id="wish-card">
     <h2>// 作战指令 · 生日祝福</h2>
     <ul id="wish-list"></ul>
   </div>
   <button id="btn-wish">🌠 许个愿</button>
+  <button id="btn-relight">🕯️ 重新点燃</button>
   <button id="btn-fire">🎆 点燃土豆烟花</button>
 
   <div class="photo-wall" id="photo-wall">
@@ -557,7 +572,9 @@ $('#celebrate-sub').textContent = CONFIG.codeName + ' 🥔';
 
 /* ---------- 音效（WebAudio，无需外部文件） ---------- */
 let AC=null;
+let soundOn = true;
 function beep(freq=660, dur=0.06, type='square', vol=0.04){
+  if(!soundOn) return;
   try{
     if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
     const o=AC.createOscillator(), g=AC.createGain();
@@ -578,6 +595,7 @@ const MELODY = [
 ];
 let musicOn=false, musicTimer=null, musicIdx=0;
 function playNote(freq,dur){
+  if(!soundOn) return;
   try{
     if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
     if(AC.state==='suspended') AC.resume();
@@ -598,21 +616,26 @@ function scheduleNext(){
   musicIdx++;
   musicTimer=setTimeout(scheduleNext, n[1]*1000);
 }
+function updateSoundBtn(){
+  const b=$('#btn-music');
+  b.classList.toggle('on', soundOn);
+  b.textContent = soundOn ? '🔊 音效 · 开' : '🔇 音效 · 关';
+}
 function startMusic(){
   if(musicOn) return;
   musicOn=true;
-  const b=$('#btn-music');
-  b.classList.add('on'); b.textContent='🎵 战歌 · 开';
   scheduleNext();
 }
 function stopMusic(){
   if(!musicOn) return;
   musicOn=false;
-  const b=$('#btn-music');
-  b.classList.remove('on'); b.textContent='🎵 战歌';
   clearTimeout(musicTimer);
 }
-$('#btn-music').addEventListener('click', ()=>{ if(musicOn) stopMusic(); else startMusic(); });
+$('#btn-music').addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  if(soundOn) startMusic(); else stopMusic();
+  updateSoundBtn();
+});
 
 /* ---------- 开机终端打字 ---------- */
 const bootLines = [
@@ -692,7 +715,7 @@ function tickHold(){
     beep(180,.02,'square',.06);beep(90,.25,'sawtooth',.06);
     setTimeout(()=>{
       const f=$('#breach-flash');f.classList.add('go');
-      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); startDanmaku(); renderPhotos(); burst(25); }, 160);
+      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); startDanmaku(); renderPhotos(); burst(25); if(nextBirthdayInfo().isToday){ $('#wish-card').classList.add('show'); $('#btn-wish').classList.add('show'); renderWishes(); burst(60); } }, 160);
     }, 420);
   } else {
     holdRAF = requestAnimationFrame(tickHold);
@@ -711,26 +734,44 @@ btnB.addEventListener('touchstart',(e)=>e.preventDefault(),{passive:false});
 btnB.addEventListener('contextmenu',(e)=>e.preventDefault());
 
 /* ---------- 蜡烛 ---------- */
+const CANDLE_N = 6;
+let blownCount = 0;
 function buildCandles(){
   const wrap=$('#candles'); wrap.innerHTML='';
-  const n=6;
-  for(let i=0;i<n;i++){
+  blownCount = 0;
+  $('#btn-relight').classList.remove('show');
+  $('#candle-log').innerHTML='';
+  for(let i=0;i<CANDLE_N;i++){
     const c=document.createElement('div');c.className='candle';
     c.innerHTML='<div class="smoke"></div><div class="flame"></div><div class="stick"></div>';
     c.addEventListener('click',()=>{
-      if(c.classList.contains('out'))return;
-      c.classList.add('out');
+      if(c.dataset.blown) return;
+      c.dataset.blown='1';
+      blownCount++;
+      c.classList.add('dying');
       beep(700,.05,'sine',.03);
-      if([...wrap.children].every(x=>x.classList.contains('out'))){
-        $('#wish-card').classList.add('show');
-        $('#btn-wish').classList.add('show');
-        renderWishes();
-        burst(30);
+      setTimeout(()=>{ c.classList.add('out'); }, 300);
+      const left=CANDLE_N-blownCount;
+      $('#candle-log').innerHTML = left>0
+        ? '[CANDLE '+('0'+blownCount)+'/'+CANDLE_N+'] EXTINGUISHED · 还剩 <b>'+left+'</b> 根'
+        : '[ALL CANDLES OUT] 祝福已解锁 ✅';
+      if(blownCount>=CANDLE_N){
+        const df=$('#dark-flash');
+        df.classList.add('go');
+        setTimeout(()=>{
+          df.classList.remove('go');
+          $('#wish-card').classList.add('show');
+          $('#btn-wish').classList.add('show');
+          $('#btn-relight').classList.add('show');
+          renderWishes();
+          burst(30);
+        }, 260);
       }
     });
     wrap.appendChild(c);
   }
 }
+$('#btn-relight').addEventListener('click',()=>{ beep(520,.08); buildCandles(); });
 function renderWishes(){
   const ul=$('#wish-list');ul.innerHTML='';
   CONFIG.wishes.forEach((w,i)=>{
@@ -956,9 +997,18 @@ function lunarToSolar(ly,lm,ld){
 }
 
 /* ---------- 倒计时（长期可用 · 按农历生日自动换算） ---------- */
+function beijingToday(){
+  try{
+    const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    const g={}; p.forEach(x=>g[x.type]=x.value);
+    return { y:+g.year, m:+g.month, d:+g.day };
+  }catch(e){
+    const n=new Date(); return { y:n.getFullYear(), m:n.getMonth()+1, d:n.getDate() };
+  }
+}
 function nextBirthdayInfo(){
-  const now=new Date();
-  const ty=now.getFullYear(), tm=now.getMonth()+1, td=now.getDate();
+  const bj=beijingToday();
+  const ty=bj.y, tm=bj.m, td=bj.d;
   const todayUtc=Date.UTC(ty,tm-1,td);
   const lm=CONFIG.lunarBirthday.month, ld=CONFIG.lunarBirthday.day;
   const t=solarToLunar(ty,tm,td);
@@ -979,9 +1029,11 @@ function renderCountdown(){
   const el=$('#countdown');
   const info=nextBirthdayInfo();
   if(info.isToday){
-    el.innerHTML='🎂 今天就是你的生日（农历十一月初一）· <b>HAPPY BIRTHDAY!</b>';
+    el.innerHTML='🎂 <b>TODAY IS THE DAY</b> · 今天就是你的生日（农历十一月初一）';
+  } else if(info.days===null){
+    el.innerHTML='农历十一月初一 · 每年自动换算（北京时间）';
   } else {
-    el.innerHTML='距下一次生日（农历十一月初一）还有 <b>'+info.days+'</b> 天 · 即 '+info.dateStr;
+    el.innerHTML='距下一次生日（农历十一月初一）还有 <b>'+info.days+'</b> 天 · 即 '+info.dateStr+' · 北京时间';
   }
 }
 
@@ -1040,6 +1092,7 @@ addEventListener('pointerdown',(e)=>{
 });
 
 /* ---------- 启动 ---------- */
+updateSoundBtn();
 typeBoot();
 renderCountdown();
 </script>
