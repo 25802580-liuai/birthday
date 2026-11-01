@@ -224,11 +224,13 @@ body{
 .celebrate-kicker{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--amber);margin-bottom:8px;}
 .celebrate-title{
   font-size:clamp(30px,9vw,52px);font-weight:900;letter-spacing:2px;
-  background:linear-gradient(180deg,#fff, var(--green-bright));
+  background:linear-gradient(90deg,#b6d99a,#fff,#e8a33d,#b6d99a);
+  background-size:200% auto;
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 0 30px rgba(183,217,154,.3);
+  animation:shimmer 3s linear infinite;
   margin-bottom:6px;
 }
+@keyframes shimmer{to{background-position:200% center;}}
 .celebrate-sub{font-family:var(--mono);color:var(--ink-dim);font-size:13px;letter-spacing:1px;margin-bottom:24px;}
 
 /* 蛋糕 + 蜡烛 */
@@ -294,7 +296,10 @@ body{
 .photo-frame{
   position:relative;aspect-ratio:3/4;background:var(--panel2);
   border:1px solid var(--line);overflow:hidden;cursor:pointer;
+  border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.35);
 }
+.photo-add{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--panel);box-shadow:none;}
+.photo-add-inner{color:var(--ink-dim);font-family:var(--mono);font-size:13px;letter-spacing:1px;text-align:center;line-height:1.9;}
 .photo-frame::before,.photo-frame::after{content:"";position:absolute;width:16px;height:16px;pointer-events:none;z-index:2;}
 .photo-frame::before{top:0;left:0;border-top:2px solid var(--green);border-left:2px solid var(--green);}
 .photo-frame::after{bottom:0;right:0;border-bottom:2px solid var(--green);border-right:2px solid var(--green);}
@@ -333,6 +338,11 @@ body{
 #killfeed .kf{font-size:11px;letter-spacing:1px;color:var(--ink);background:rgba(20,26,15,.8);border:1px solid var(--line);border-left:3px solid var(--green);padding:5px 9px;animation:kfin .3s forwards;}
 #killfeed .kf.warn{border-left-color:var(--amber);}
 @keyframes kfin{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:none;}}
+
+/* 弹幕 */
+#danmaku{position:fixed;inset:0;z-index:12;pointer-events:none;overflow:hidden;}
+#danmaku span{position:absolute;white-space:nowrap;color:var(--ink);opacity:.55;font-family:var(--sans);animation:dm linear;}
+@keyframes dm{from{transform:translateX(100vw);}to{transform:translateX(-110%);}}
 
 /* 战歌按钮 */
 #btn-music{
@@ -396,9 +406,11 @@ body{
 <div id="bg-potatoes"></div>
 <div id="bg-stars"></div>
 <div id="killfeed"></div>
+<div id="danmaku"></div>
 <div id="shooting-star">🌠</div>
 <button id="btn-music">🎵 战歌</button>
 <div id="lightbox"><img id="lightbox-img" alt=""></div>
+<input type="file" id="photo-input" accept="image/*" multiple style="display:none">
 
 <!-- ============ 1. 开机终端 ============ -->
 <section class="screen active" id="screen-boot">
@@ -658,7 +670,7 @@ function tickHold(){
     beep(180,.02,'square',.06);beep(90,.25,'sawtooth',.06);
     setTimeout(()=>{
       const f=$('#breach-flash');f.classList.add('go');
-      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); renderPhotos(); burst(25); }, 160);
+      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); startDanmaku(); renderPhotos(); burst(25); }, 160);
     }, 420);
   } else {
     holdRAF = requestAnimationFrame(tickHold);
@@ -755,6 +767,25 @@ function startKillfeed(){
   kfTimer=setInterval(push, 2200);
 }
 
+/* ---------- 弹幕 ---------- */
+const DM=['土豆小姐生日快乐 🥔','谢晓玲 最美 🎂','三角洲最强女枪神','薯条自由 快乐加倍','鸡蛋先生 永远挺你','今天你是主角'];
+let dmTimer=null;
+function startDanmaku(){
+  if(dmTimer) clearInterval(dmTimer);
+  const box=$('#danmaku'); box.innerHTML='';
+  function push(){
+    const s=document.createElement('span');
+    s.textContent=DM[Math.floor(Math.random()*DM.length)];
+    s.style.top=(Math.random()*42+4)+'vh';
+    s.style.animationDuration=(9+Math.random()*7)+'s';
+    s.style.fontSize=(13+Math.random()*7)+'px';
+    box.appendChild(s);
+    setTimeout(()=>{ if(s.parentNode) s.remove(); }, 17000);
+  }
+  push(); push(); push();
+  dmTimer=setInterval(push, 2200);
+}
+
 /* ---------- 点击任意处放烟花 ---------- */
 $('#screen-celebrate').addEventListener('pointerdown', (e)=>{
   if(e.target.closest('button')) return;
@@ -762,27 +793,36 @@ $('#screen-celebrate').addEventListener('pointerdown', (e)=>{
   beep(500+Math.random()*500, .05, 'square', .02);
 });
 
-/* ---------- 照片墙 ---------- */
+/* ---------- 照片墙（支持自己上传） ---------- */
+function addPhotoFrame(box, src, cap){
+  const f=document.createElement('div');
+  f.className='photo-frame';
+  f.innerHTML='<img src="'+src+'" alt=""><div class="cap">'+cap+'</div>';
+  f.addEventListener('click', ()=>{ $('#lightbox-img').src=src; $('#lightbox').classList.add('show'); });
+  box.appendChild(f);
+}
+function addPhotoAdder(box){
+  const d=document.createElement('div');
+  d.className='photo-frame photo-add';
+  d.innerHTML='<div class="photo-add-inner">📷<br>添加照片</div>';
+  d.addEventListener('click', ()=>{ $('#photo-input').click(); });
+  box.appendChild(d);
+}
 function renderPhotos(){
   const box=$('#photos'); box.innerHTML='';
-  if(!CONFIG.photos || CONFIG.photos.length===0){
-    const d=document.createElement('div');
-    d.className='photo-frame';
-    d.innerHTML='<div class="photo-empty">📷 待添加照片<br>在文件顶部 CONFIG.photos 里填</div>';
-    box.appendChild(d);
-    return;
-  }
-  CONFIG.photos.forEach((src,i)=>{
-    const f=document.createElement('div');
-    f.className='photo-frame';
-    f.innerHTML='<img src="'+src+'" alt=""><div class="cap">SHOT · '+(i+1)+'</div>';
-    f.addEventListener('click', ()=>{
-      $('#lightbox-img').src=src;
-      $('#lightbox').classList.add('show');
-    });
-    box.appendChild(f);
-  });
+  (CONFIG.photos||[]).forEach((src,i)=>{ addPhotoFrame(box, src, 'SHOT · '+(i+1)); });
+  addPhotoAdder(box);
 }
+$('#photo-input').addEventListener('change', (e)=>{
+  const box=$('#photos');
+  const files=e.target.files;
+  const adder=box.querySelector('.photo-add'); if(adder) adder.remove();
+  for(let i=0;i<files.length;i++){
+    addPhotoFrame(box, URL.createObjectURL(files[i]), 'NEW · '+(i+1));
+  }
+  addPhotoAdder(box);
+  e.target.value='';
+});
 $('#lightbox').addEventListener('click', ()=>{ $('#lightbox').classList.remove('show'); });
 
 /* ---------- 许愿 + 流星 + 行动报告 ---------- */
