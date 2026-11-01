@@ -395,6 +395,27 @@ body{
   100%{opacity:0;transform:translate(125vw,78vh) rotate(35deg);}
 }
 
+/* 奶龙（生日祝福小奶龙） */
+#nailong{
+  position:fixed;left:6px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:36;
+  width:96px;height:96px;pointer-events:none;
+  opacity:0;transform:translateX(-130%);
+  transition:transform .7s cubic-bezier(.34,1.56,.64,1), opacity .5s;
+}
+#nailong.show{opacity:1;transform:none;}
+#nailong svg{width:100%;height:100%;display:block;}
+#nailong.show svg{animation:nl-bounce 1.6s ease-in-out infinite;}
+@keyframes nl-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+#nailong .nl-arm{transform-box:fill-box;transform-origin:100% 100%;animation:nl-wave .55s ease-in-out infinite alternate;}
+@keyframes nl-wave{from{transform:rotate(0deg);}to{transform:rotate(-22deg);}}
+#nailong .nl-bubble{
+  position:absolute;top:-6px;left:66px;background:#fff;color:#ff6b6b;
+  font-size:12px;font-weight:700;padding:6px 10px;border-radius:10px;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);opacity:0;transform:scale(.4);transition:.35s;
+}
+#nailong.show .nl-bubble{opacity:1;transform:scale(1);transition-delay:.55s;}
+#nailong .nl-bubble::after{content:"";position:absolute;left:-6px;bottom:8px;border:6px solid transparent;border-right-color:#fff;}
+
 /* 行动报告 */
 .mission-report{
   width:min(520px,92vw);background:var(--panel);border:1px solid var(--line);
@@ -437,6 +458,36 @@ body{
 <div id="killfeed"></div>
 <div id="danmaku"></div>
 <div id="shooting-star">🌠</div>
+<div id="nailong">
+  <svg viewBox="0 0 200 200" aria-hidden="true">
+    <path d="M20 120 Q4 104 10 128 Q22 140 30 130 Z" fill="#ffc21a"/>
+    <path d="M180 120 Q196 104 190 128 Q178 140 170 130 Z" fill="#ffc21a"/>
+    <ellipse cx="100" cy="150" rx="44" ry="38" fill="#ffd24a"/>
+    <ellipse cx="100" cy="160" rx="30" ry="24" fill="#fff6df"/>
+    <ellipse cx="72" cy="182" rx="14" ry="9" fill="#ffd24a"/>
+    <ellipse cx="128" cy="182" rx="14" ry="9" fill="#ffd24a"/>
+    <circle cx="100" cy="82" r="54" fill="#ffd24a"/>
+    <path d="M64 40 Q60 20 76 26 Q80 34 76 44 Z" fill="#ff9f1a"/>
+    <path d="M136 40 Q140 20 124 26 Q120 34 124 44 Z" fill="#ff9f1a"/>
+    <circle cx="80" cy="80" r="10" fill="#3a2a1a"/>
+    <circle cx="120" cy="80" r="10" fill="#3a2a1a"/>
+    <circle cx="83" cy="77" r="3.5" fill="#fff"/>
+    <circle cx="123" cy="77" r="3.5" fill="#fff"/>
+    <ellipse cx="64" cy="96" rx="8" ry="5" fill="#ffb3a0" opacity=".85"/>
+    <ellipse cx="136" cy="96" rx="8" ry="5" fill="#ffb3a0" opacity=".85"/>
+    <path d="M90 96 Q100 106 110 96" stroke="#3a2a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M142 140 Q160 128 158 114" stroke="#ffd24a" stroke-width="13" fill="none" stroke-linecap="round"/>
+    <circle cx="158" cy="112" r="8" fill="#ffd24a"/>
+    <g class="nl-arm">
+      <path d="M58 140 Q40 128 42 112" stroke="#ffd24a" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <circle cx="42" cy="110" r="8" fill="#ffd24a"/>
+    </g>
+    <polygon points="100,14 76,52 124,52" fill="#ff6b6b"/>
+    <rect x="72" y="50" width="56" height="6" rx="3" fill="#ff8a8a"/>
+    <circle cx="100" cy="14" r="7" fill="#fff7d6"/>
+  </svg>
+  <div class="nl-bubble">生日快乐 🎂</div>
+</div>
 <button id="btn-music">🔊 音效 · 开</button>
 <div id="lightbox"><img id="lightbox-img" alt=""></div>
 <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
@@ -539,11 +590,19 @@ const CONFIG = {
   codeName: "土豆小姐",        // 她的昵称（全站只用昵称，不出现真名）
   lunarBirthday: { month: 11, day: 1 },  // ★ 农历生日：十一月初一（每年公历日期自动换算，无需改）
   sender:   "鸡蛋先生",        // 你的名字
-  wishes: [                     // 祝福语，可自由增删
+  wishes: [                     // 祝福语池：第 1 句固定为问候，其余每次随机抽几句（每次不一样）
     "土豆小姐，生日快乐。",
     "愿你在三角洲里越玩越厉害。",
     "祝你一切顺利，天天开心。",
-    "新的一岁，越来越好。"
+    "新的一岁，越来越好。",
+    "愿你想要的都实现，讨厌的都走远。",
+    "愿你每天都有好心情，笑口常开。",
+    "做最真实的自己，开心最重要。",
+    "愿好运常伴你左右，顺风顺水。",
+    "岁岁常欢愉，万事皆胜意。",
+    "愿你打游戏把把顺利，撤离成功。",
+    "土豆自由，快乐常有。",
+    "愿你被这个世界温柔以待。"
   ],
   photos: []                    // ★ 她的照片：填图片网址或 base64，例如 ["https://xx.jpg", "data:image/jpeg;base64,...."]
 };
@@ -715,7 +774,7 @@ function tickHold(){
     beep(180,.02,'square',.06);beep(90,.25,'sawtooth',.06);
     setTimeout(()=>{
       const f=$('#breach-flash');f.classList.add('go');
-      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); startDanmaku(); renderPhotos(); burst(25); if(nextBirthdayInfo().isToday){ $('#wish-card').classList.add('show'); $('#btn-wish').classList.add('show'); renderWishes(); burst(60); } }, 160);
+      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); $('#nailong').classList.add('show'); buildCandles(); spawnPotatoes(); startKillfeed(); startDanmaku(); renderPhotos(); burst(25); if(nextBirthdayInfo().isToday){ $('#wish-card').classList.add('show'); $('#btn-wish').classList.add('show'); renderWishes(); burst(60); } }, 160);
     }, 420);
   } else {
     holdRAF = requestAnimationFrame(tickHold);
@@ -772,12 +831,18 @@ function buildCandles(){
   }
 }
 $('#btn-relight').addEventListener('click',()=>{ beep(520,.08); buildCandles(); });
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i];a[i]=a[j];a[j]=t; }
+  return a;
+}
 function renderWishes(){
   const ul=$('#wish-list');ul.innerHTML='';
-  CONFIG.wishes.forEach((w,i)=>{
+  const picked=[CONFIG.wishes[0], ...shuffle(CONFIG.wishes.slice(1)).slice(0,4)];  // 问候固定 + 随机抽 4 句
+  picked.forEach((w,i)=>{
     const li=document.createElement('li');li.textContent=w;
     li.style.opacity='0';li.style.transform='translateX(-10px)';
-    li.style.transition='opacity .5s '+(i*0.2)+'s, transform .5s '+(i*0.2)+'s';
+    li.style.transition='opacity .5s '+(i*0.18)+'s, transform .5s '+(i*0.18)+'s';
     ul.appendChild(li);
   });
   requestAnimationFrame(()=>{
