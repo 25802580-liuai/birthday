@@ -564,12 +564,21 @@ function scheduleNext(){
   musicIdx++;
   musicTimer=setTimeout(scheduleNext, n[1]*1000);
 }
-$('#btn-music').addEventListener('click', ()=>{
-  musicOn=!musicOn;
+function startMusic(){
+  if(musicOn) return;
+  musicOn=true;
   const b=$('#btn-music');
-  if(musicOn){ b.classList.add('on'); b.textContent='🎵 战歌 · 开'; scheduleNext(); }
-  else { b.classList.remove('on'); b.textContent='🎵 战歌'; clearTimeout(musicTimer); }
-});
+  b.classList.add('on'); b.textContent='🎵 战歌 · 开';
+  scheduleNext();
+}
+function stopMusic(){
+  if(!musicOn) return;
+  musicOn=false;
+  const b=$('#btn-music');
+  b.classList.remove('on'); b.textContent='🎵 战歌';
+  clearTimeout(musicTimer);
+}
+$('#btn-music').addEventListener('click', ()=>{ if(musicOn) stopMusic(); else startMusic(); });
 
 /* ---------- 开机终端打字 ---------- */
 const bootLines = [
@@ -611,6 +620,7 @@ function typeBoot(){
 /* ---------- 进入作战按钮 ---------- */
 $('#boot-enter').addEventListener('click', ()=>{
   beep(520,.08);
+  startMusic();
   go('brief');
 });
 /* 点击终端也可进入（微信里方便） */
