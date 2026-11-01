@@ -238,27 +238,27 @@ body{
 .celebrate-sub{font-family:var(--mono);color:var(--ink-dim);font-size:13px;letter-spacing:1px;margin-bottom:24px;}
 
 /* 蛋糕 + 蜡烛 */
-.cake-zone{position:relative;height:215px;margin:10px 0 26px;}
-.cake-css{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:220px;height:190px;animation:float 3.5s ease-in-out infinite;}
+.cake-zone{position:relative;height:172px;margin:6px 0 20px;}
+.cake-css{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:176px;height:152px;animation:float 3.5s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-7px);}}
 .cake-layer{position:absolute;left:50%;transform:translateX(-50%);box-shadow:inset 0 -8px 14px rgba(0,0,0,.18);}
-.cake-layer.l1{bottom:0;width:205px;height:60px;background:linear-gradient(180deg,#e8a33d,#b06a1a);border-radius:12px 12px 5px 5px;}
-.cake-layer.l2{bottom:48px;width:155px;height:52px;background:linear-gradient(180deg,#f7ecd0,#dcc79b);border-radius:9px 9px 5px 5px;}
-.cake-layer.l3{bottom:88px;width:105px;height:44px;background:linear-gradient(180deg,#e8a33d,#b06a1a);border-radius:9px 9px 5px 5px;}
+.cake-layer.l1{bottom:0;width:164px;height:48px;background:linear-gradient(180deg,#e8a33d,#b06a1a);border-radius:12px 12px 5px 5px;}
+.cake-layer.l2{bottom:38px;width:124px;height:42px;background:linear-gradient(180deg,#f7ecd0,#dcc79b);border-radius:9px 9px 5px 5px;}
+.cake-layer.l3{bottom:70px;width:84px;height:35px;background:linear-gradient(180deg,#e8a33d,#b06a1a);border-radius:9px 9px 5px 5px;}
 .cake-layer::before{content:"";position:absolute;top:-2px;left:0;right:0;height:12px;
   background:radial-gradient(circle at 10px 3px,#fff7e6 5px,transparent 6px);
   background-size:22px 12px;background-repeat:repeat-x;}
-.cake-plate{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:230px;height:16px;background:#33452a;border-radius:50%;box-shadow:0 6px 14px rgba(0,0,0,.5);}
-.cake-candles{position:absolute;bottom:104px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:3;}
-.candle{position:relative;width:34px;height:58px;cursor:pointer;}
+.cake-plate{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:184px;height:13px;background:#33452a;border-radius:50%;box-shadow:0 6px 14px rgba(0,0,0,.5);}
+.cake-candles{position:absolute;bottom:83px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3;}
+.candle{position:relative;width:30px;height:46px;cursor:pointer;}
 .candle .stick{
   position:absolute;bottom:0;left:50%;transform:translateX(-50%);
-  width:8px;height:38px;border-radius:3px;
+  width:7px;height:30px;border-radius:3px;
   background:linear-gradient(180deg,#e8a33d,#c07a2a 40%,#f4e6c8 40%,#e9d9b8);
 }
 .candle .flame{
-  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
-  width:12px;height:16px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  width:11px;height:14px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
   background:radial-gradient(circle at 50% 65%, #fff7d6, #ffd24a 45%, #ff8a2a 80%);
   animation:flicker .18s alternate infinite;
 }
@@ -267,7 +267,7 @@ body{
 @keyframes blow{0%{transform:translateX(-50%) scale(1);opacity:1;}45%{transform:translateX(-58%) rotate(-20deg) scale(.85);opacity:1;}100%{transform:translateX(-72%) rotate(-38deg) scale(.15);opacity:0;}}
 .candle.out .flame{display:none;}
 .candle .smoke{
-  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
   width:6px;height:6px;border-radius:50%;background:rgba(200,200,200,.7);
   opacity:0;
 }
@@ -368,7 +368,7 @@ body{
 
 /* 战歌按钮 */
 #btn-music{
-  position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top));z-index:40;
+  position:fixed;right:14px;top:auto;bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;
   font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--amber);
   background:rgba(20,26,15,.85);border:1px solid var(--line);padding:8px 12px;cursor:pointer;opacity:.9;
 }
@@ -734,7 +734,7 @@ btnB.addEventListener('touchstart',(e)=>e.preventDefault(),{passive:false});
 btnB.addEventListener('contextmenu',(e)=>e.preventDefault());
 
 /* ---------- 蜡烛 ---------- */
-const CANDLE_N = 6;
+const CANDLE_N = 5;
 let blownCount = 0;
 function buildCandles(){
   const wrap=$('#candles'); wrap.innerHTML='';
