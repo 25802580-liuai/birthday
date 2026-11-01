@@ -447,7 +447,7 @@ body{
     <div class="kicker">MISSION BRIEFING // 任务简报</div>
     <h1>OPERATION BIRTHDAY</h1>
     <div class="briefing-line"><span class="k">行动代号</span><span class="v hot">BIRTHDAY · 生日特别行动</span></div>
-    <div class="briefing-line"><span class="k">任务目标</span><span class="v" id="brief-name">谢晓玲 · 代号「土豆小姐」</span></div>
+    <div class="briefing-line"><span class="k">任务目标</span><span class="v" id="brief-name">土豆小姐</span></div>
     <div class="briefing-line"><span class="k">目标特征</span><span class="v">爱吃土豆 🥔 · 三角洲行动高手</span></div>
     <div class="briefing-line"><span class="k">任务性质</span><span class="v">祝她生日快乐 · 最高优先级</span></div>
     <div class="briefing-line"><span class="k">任务地点</span><span class="v">坐标已加密 🔒</span></div>
@@ -479,7 +479,7 @@ body{
 <section class="screen" id="screen-celebrate">
   <div class="celebrate-kicker">TARGET ACQUIRED // 目标已锁定</div>
   <div class="celebrate-title">生日快乐</div>
-  <div class="celebrate-sub" id="celebrate-sub">谢晓玲 · 土豆小姐 🥔</div>
+  <div class="celebrate-sub" id="celebrate-sub">土豆小姐 🥔</div>
 
   <div class="cake-zone">
     <div class="cake-css">
@@ -521,12 +521,11 @@ body{
    ★★★ 在这里改配置 —— 以后每年生日都不用再改代码 ★★★
    ============================================================ */
 const CONFIG = {
-  herName:  "谢晓玲",          // 她的名字
-  codeName: "土豆小姐",        // 她的代号
+  codeName: "土豆小姐",        // 她的昵称（全站只用昵称，不出现真名）
   lunarBirthday: { month: 11, day: 1 },  // ★ 农历生日：十一月初一（每年公历日期自动换算，无需改）
   sender:   "鸡蛋先生",        // 你的名字
   wishes: [                     // 祝福语，可自由增删
-    "谢晓玲，生日快乐。",
+    "土豆小姐，生日快乐。",
     "愿你在三角洲里越玩越厉害。",
     "祝你一切顺利，天天开心。",
     "新的一岁，越来越好。"
@@ -552,9 +551,9 @@ function go(name){
 }
 
 /* ---------- 填充署名 ---------- */
-$('#brief-name').textContent   = CONFIG.herName + ' · 代号「' + CONFIG.codeName + '」';
+$('#brief-name').textContent   = CONFIG.codeName;
 $('#brief-sender').textContent = CONFIG.sender;
-$('#celebrate-sub').textContent = CONFIG.herName + ' · ' + CONFIG.codeName + ' 🥔';
+$('#celebrate-sub').textContent = CONFIG.codeName + ' 🥔';
 
 /* ---------- 音效（WebAudio，无需外部文件） ---------- */
 let AC=null;
@@ -623,7 +622,7 @@ const bootLines = [
   "",
   "[初始化核心模块] ......... 完成",
   "[载入目标档案] ......... 完成",
-  "[目标：" + CONFIG.herName + " · 代号「" + CONFIG.codeName + "」]",
+  "[目标：" + CONFIG.codeName + "]",
   "[识别：爱吃土豆 · 擅长三角洲行动]",
   "[校验授权人：" + CONFIG.sender + "] .......... 通过",
   "[系统就绪]"
@@ -791,7 +790,7 @@ function startKillfeed(){
 }
 
 /* ---------- 弹幕 ---------- */
-const DM=['土豆小姐生日快乐 🥔','谢晓玲 最美 🎂','三角洲最强女枪神','薯条自由 快乐加倍','土豆管够 🍟','今天你是主角'];
+const DM=['土豆小姐生日快乐 🥔','土豆小姐 最美 🎂','三角洲最强女枪神','薯条自由 快乐加倍','土豆管够 🍟','今天你是主角'];
 let dmTimer=null;
 function startDanmaku(){
   if(dmTimer) clearInterval(dmTimer);
