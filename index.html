@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>三角洲 · 生日特别行动</title>
+<style>
+/* ============================================================
+   三角洲行动 · 生日特别行动 —— 单文件版
+   为 土豆小姐 定制的生日特别行动
+   ============================================================ */
+
+/* ---------------------------- 配置变量 ---------------------------- */
+:root{
+  --bg:#0a0e08;
+  --bg2:#12180e;
+  --panel:#141a0f;
+  --panel2:#1c2415;
+  --line:#2c3a20;
+  --green:#8fb573;
+  --green-bright:#b6d99a;
+  --amber:#e8a33d;
+  --red:#e0523f;
+  --cyan:#63d8c8;
+  --ink:#d7e0cc;
+  --ink-dim:#8fa07e;
+  --mono:"Consolas","Courier New","Menlo",monospace;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  overflow:hidden;
+  user-select:none;
+  -webkit-user-select:none;
+  position:fixed;
+  inset:0;
+}
+
+/* 战术网格背景 */
+.bg-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(143,181,115,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143,181,115,.05) 1px, transparent 1px);
+  background-size:42px 42px;
+}
+/* 扫描线 + 暗角 */
+.bg-scan{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px);
+}
+.bg-vignette{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.72) 100%);
+}
+
+/* 四角 HUD 瞄准框 */
+.hud-corner{position:fixed;z-index:3;width:42px;height:42px;pointer-events:none;opacity:.7;}
+.hud-corner.tl{top:14px;left:14px;border-top:2px solid var(--green);border-left:2px solid var(--green);}
+.hud-corner.tr{top:14px;right:14px;border-top:2px solid var(--green);border-right:2px solid var(--green);}
+.hud-corner.bl{bottom:14px;left:14px;border-bottom:2px solid var(--green);border-left:2px solid var(--green);}
+.hud-corner.br{bottom:14px;right:14px;border-bottom:2px solid var(--green);border-right:2px solid var(--green);}
+
+/* 跟随指针的准星 */
+#crosshair{
+  position:fixed;z-index:50;width:34px;height:34px;pointer-events:none;
+  transform:translate(-50%,-50%);opacity:.35;transition:opacity .3s;
+}
+#crosshair::before,#crosshair::after{content:"";position:absolute;background:var(--red);}
+#crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%);}
+#crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%);}
+#crosshair .dot{position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;
+  background:var(--red);transform:translate(-50%,-50%);}
+
+/* ---------------------------- 屏幕切换 ---------------------------- */
+.screen{
+  position:fixed;inset:0;z-index:10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .5s ease, visibility .5s;
+}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto;}
+
+/* ---------------------------- 1. 开机终端 ---------------------------- */
+#screen-boot{justify-content:center;}
+.boot-window{
+  width:min(560px,92vw);
+  background:var(--panel);
+  border:1px solid var(--line);
+  box-shadow:0 0 40px rgba(143,181,115,.12);
+  text-align:left;
+  position:relative;
+}
+.boot-titlebar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;background:var(--panel2);
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+  letter-spacing:1px;
+}
+.boot-titlebar .dot{width:10px;height:10px;border-radius:50%;}
+.boot-titlebar .dot.r{background:#e0523f;}
+.boot-titlebar .dot.y{background:#e8a33d;}
+.boot-titlebar .dot.g{background:#8fb573;}
+#boot-text{
+  padding:18px 16px;min-height:230px;
+  font-family:var(--mono);font-size:13px;line-height:1.85;
+  white-space:pre-wrap;word-break:break-all;color:var(--green-bright);
+}
+#boot-text .caret{display:inline-block;width:8px;height:15px;background:var(--green-bright);
+  vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite;}
+@keyframes blink{50%{opacity:0;}}
+#boot-enter{
+  margin-top:20px;opacity:0;transform:translateY(10px);transition:.5s;
+  font-family:var(--mono);font-size:15px;color:var(--amber);
+  letter-spacing:3px;border:1px solid var(--amber);padding:14px 30px;
+  background:rgba(232,163,61,.08);cursor:pointer;
+}
+#boot-enter.show{opacity:1;transform:none;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,163,61,.35);}50%{box-shadow:0 0 0 10px rgba(232,163,61,0);}}
+
+/* ---------------------------- 2. 任务简报 ---------------------------- */
+.stamp{
+  position:absolute;top:26px;right:26px;
+  border:2px solid var(--red);color:var(--red);
+  padding:6px 10px;font-size:12px;letter-spacing:4px;font-weight:700;
+  transform:rotate(12deg);opacity:.85;font-family:var(--mono);
+}
+.briefing-box{
+  position:relative;width:min(520px,92vw);
+  background:var(--panel);border:1px solid var(--line);
+  padding:36px 26px 30px;text-align:left;
+  box-shadow:0 0 40px rgba(143,181,115,.10);
+}
+.briefing-box .kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--amber);
+  margin-bottom:6px;
+}
+.briefing-box h1{
+  font-family:var(--mono);font-size:26px;letter-spacing:2px;color:var(--ink);
+  margin-bottom:22px;text-transform:uppercase;
+}
+.briefing-line{
+  display:flex;gap:10px;font-size:14px;line-height:2;color:var(--ink);
+  border-bottom:1px dashed var(--line);padding:6px 0;
+}
+.briefing-line .k{color:var(--ink-dim);font-family:var(--mono);font-size:12px;min-width:76px;letter-spacing:1px;}
+.briefing-line .v{color:var(--green-bright);font-weight:600;}
+.briefing-line .v.hot{color:var(--amber);}
+#btn-deploy{
+  margin:26px auto 0;display:block;width:100%;
+  font-family:var(--mono);font-size:17px;letter-spacing:4px;color:#0a0e08;
+  background:var(--amber);border:none;padding:16px;cursor:pointer;font-weight:700;
+  text-transform:uppercase;transition:.2s;
+}
+#btn-deploy:active{transform:scale(.97);}
+#btn-deploy:disabled{background:#5a5a4a;color:#1a1a14;}
+
+/* ---------------------------- 3. 破门/锁定 ---------------------------- */
+#screen-breach{background:radial-gradient(ellipse at center, rgba(143,181,115,.06), transparent 70%);}
+.breach-label{
+  font-family:var(--mono);font-size:12px;letter-spacing:4px;color:var(--ink-dim);
+  margin-bottom:14px;text-transform:uppercase;
+}
+.radar{
+  width:180px;height:180px;border-radius:50%;position:relative;
+  border:1px solid var(--line);background:
+    radial-gradient(circle, rgba(99,216,200,.08), transparent 70%);
+  box-shadow:inset 0 0 40px rgba(99,216,200,.10);
+  margin-bottom:8px;
+}
+.radar::before{
+  content:"";position:absolute;inset:12px;border-radius:50%;border:1px solid rgba(99,216,200,.25);
+}
+.radar .sweep{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(99,216,200,.45), transparent 70deg);
+  animation:sweep 3s linear infinite;
+}
+@keyframes sweep{to{transform:rotate(360deg);}}
+.radar .blip{
+  position:absolute;left:62%;top:38%;font-size:26px;
+  animation:blip 1.2s ease-in-out infinite;
+}
+@keyframes blip{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.25);opacity:1;}}
+.radar .ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(99,216,200,.4);
+  animation:ring 2.2s ease-out infinite;}
+@keyframes ring{0%{transform:scale(.3);opacity:0;}30%{opacity:.8;}100%{transform:scale(1.25);opacity:0;}}
+.breach-hint{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin:14px 0 30px;letter-spacing:1px;}
+
+/* 长按引爆按钮 */
+#hold-wrap{position:relative;width:170px;height:170px;}
+#hold-ring{position:absolute;inset:0;}
+#hold-ring .track{fill:none;stroke:var(--line);stroke-width:5;}
+#hold-ring .fill{fill:none;stroke:var(--amber);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:502;stroke-dashoffset:502;transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset .05s linear;}
+#btn-breach{
+  position:absolute;inset:14px;border-radius:50%;touch-action:none;
+  background:radial-gradient(circle at 50% 35%, var(--panel2), var(--panel));
+  border:1px solid var(--amber);color:var(--amber);
+  font-family:var(--mono);font-size:15px;letter-spacing:2px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+}
+#btn-breach .big{font-size:22px;}
+#btn-breach:active{transform:scale(.96);}
+#lock-status{font-family:var(--mono);font-size:13px;color:var(--green-bright);letter-spacing:2px;margin-top:26px;min-height:20px;}
+
+/* 破门闪光 */
+#breach-flash{
+  position:fixed;inset:0;z-index:60;background:#fff;opacity:0;pointer-events:none;
+  transition:opacity .15s;
+}
+#breach-flash.go{opacity:.9;}
+
+/* ---------------------------- 4. 庆祝 ---------------------------- */
+#screen-celebrate{padding-top:calc(44px + env(safe-area-inset-top));padding-bottom:48px;overflow-y:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;}
+.celebrate-kicker{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--amber);margin-bottom:8px;}
+.celebrate-title{
+  font-size:clamp(30px,9vw,52px);font-weight:900;letter-spacing:2px;
+  background:linear-gradient(180deg,#fff, var(--green-bright));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(183,217,154,.3);
+  margin-bottom:6px;
+}
+.celebrate-sub{font-family:var(--mono);color:var(--ink-dim);font-size:13px;letter-spacing:1px;margin-bottom:24px;}
+
+/* 蛋糕 + 蜡烛 */
+.cake-zone{position:relative;margin:6px 0 20px;}
+.cake{
+  font-size:76px;line-height:1;position:relative;z-index:2;
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.candles{display:flex;gap:18px;justify-content:center;margin-bottom:18px;min-height:64px;}
+.candle{position:relative;width:10px;height:44px;cursor:pointer;}
+.candle .stick{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:8px;height:38px;border-radius:3px;
+  background:linear-gradient(180deg,#e8a33d,#c07a2a 40%,#f4e6c8 40%,#e9d9b8);
+}
+.candle .flame{
+  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+  width:12px;height:16px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(circle at 50% 65%, #fff7d6, #ffd24a 45%, #ff8a2a 80%);
+  animation:flicker .18s alternate infinite;
+}
+@keyframes flicker{from{transform:translateX(-50%) scale(1);}to{transform:translateX(-50%) scale(.94) rotate(-2deg);}}
+.candle.out .flame{display:none;}
+.candle .smoke{
+  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+  width:6px;height:6px;border-radius:50%;background:rgba(200,200,200,.7);
+  opacity:0;
+}
+.candle.out .smoke{animation:smoke 1.2s ease-out forwards;}
+@keyframes smoke{0%{opacity:.8;transform:translate(-50%,0) scale(.6);}
+  100%{opacity:0;transform:translate(-50%,-46px) scale(2);}}
+.candle-hint{font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:1px;margin-bottom:14px;}
+
+/* 祝福卡 */
+.wish-card{
+  width:min(520px,92vw);background:var(--panel);border:1px solid var(--line);
+  padding:22px 22px 18px;text-align:left;box-shadow:0 0 40px rgba(143,181,115,.10);
+  opacity:0;transform:translateY(16px);transition:.6s;
+}
+.wish-card.show{opacity:1;transform:none;}
+.wish-card h2{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--amber);margin-bottom:12px;}
+.wish-card ul{list-style:none;}
+.wish-card li{position:relative;padding:9px 0 9px 26px;font-size:15px;line-height:1.7;color:var(--ink);
+  border-bottom:1px dashed var(--line);}
+.wish-card li:last-child{border-bottom:none;}
+.wish-card li::before{content:"▸";position:absolute;left:0;color:var(--green);font-family:var(--mono);}
+#btn-fire{
+  margin:22px auto 0;display:block;font-family:var(--mono);font-size:16px;letter-spacing:3px;
+  color:#0a0e08;background:var(--green);border:none;padding:15px 34px;cursor:pointer;font-weight:700;transition:.2s;
+}
+#btn-fire:active{transform:scale(.97);}
+
+.countdown{
+  margin-top:16px;font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:1px;
+}
+.countdown b{color:var(--green-bright);font-size:14px;}
+
+/* 照片墙 */
+.photo-wall{width:min(520px,92vw);margin-top:24px;}
+.photo-title{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--amber);margin-bottom:12px;text-align:left;}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;}
+.photo-frame{
+  position:relative;aspect-ratio:3/4;background:var(--panel2);
+  border:1px solid var(--line);overflow:hidden;cursor:pointer;
+}
+.photo-frame::before,.photo-frame::after{content:"";position:absolute;width:16px;height:16px;pointer-events:none;z-index:2;}
+.photo-frame::before{top:0;left:0;border-top:2px solid var(--green);border-left:2px solid var(--green);}
+.photo-frame::after{bottom:0;right:0;border-bottom:2px solid var(--green);border-right:2px solid var(--green);}
+.photo-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-frame .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;font-family:var(--mono);
+  font-size:10px;letter-spacing:1px;color:var(--ink);background:linear-gradient(transparent, rgba(0,0,0,.75));
+  padding:14px 6px 5px;text-align:left;}
+.photo-empty{display:flex;align-items:center;justify-content:center;height:100%;
+  font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:1px;text-align:center;padding:12px;line-height:1.8;}
+
+/* 灯箱 */
+#lightbox{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;cursor:pointer;}
+#lightbox.show{display:flex;}
+#lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border:1px solid var(--line);}
+
+/* 烟花画布 */
+#fx{position:fixed;inset:0;z-index:55;pointer-events:none;}
+
+/* 背景漂浮土豆 */
+#bg-potatoes{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden;}
+#bg-potatoes span{position:absolute;bottom:-60px;opacity:0;animation:rise linear infinite;}
+@keyframes rise{
+  0%{transform:translateY(0) rotate(0deg);opacity:0;}
+  12%{opacity:.35;}
+  85%{opacity:.2;}
+  100%{transform:translateY(-112vh) rotate(360deg);opacity:0;}
+}
+
+/* 闪烁星星 */
+#bg-stars{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden;}
+#bg-stars span{position:absolute;color:var(--green-bright);animation:twinkle 2s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.1;transform:scale(.7);}50%{opacity:.9;transform:scale(1.1);}}
+
+/* 击杀播报 */
+#killfeed{position:fixed;top:72px;left:12px;z-index:30;display:flex;flex-direction:column;gap:6px;pointer-events:none;font-family:var(--mono);}
+#killfeed .kf{font-size:11px;letter-spacing:1px;color:var(--ink);background:rgba(20,26,15,.8);border:1px solid var(--line);border-left:3px solid var(--green);padding:5px 9px;animation:kfin .3s forwards;}
+#killfeed .kf.warn{border-left-color:var(--amber);}
+@keyframes kfin{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:none;}}
+
+/* 战歌按钮 */
+#btn-music{
+  position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top));z-index:40;
+  font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--amber);
+  background:rgba(20,26,15,.85);border:1px solid var(--line);padding:8px 12px;cursor:pointer;opacity:.9;
+}
+#btn-music.on{color:#0a0e08;background:var(--amber);}
+
+/* 许愿按钮 */
+#btn-wish{
+  margin:18px auto 0;display:none;font-family:var(--mono);font-size:15px;letter-spacing:3px;
+  color:var(--cyan);background:rgba(99,216,200,.08);border:1px solid var(--cyan);
+  padding:13px 30px;cursor:pointer;font-weight:700;transition:.2s;
+}
+#btn-wish.show{display:block;}
+#btn-wish:active{transform:scale(.97);}
+
+/* 流星 */
+#shooting-star{position:fixed;top:-12%;left:-8%;z-index:56;font-size:42px;pointer-events:none;opacity:0;}
+#shooting-star.go{animation:shoot 1s ease-in forwards;}
+@keyframes shoot{
+  0%{opacity:0;transform:translate(0,0) rotate(35deg);}
+  12%{opacity:1;}
+  100%{opacity:0;transform:translate(125vw,78vh) rotate(35deg);}
+}
+
+/* 行动报告 */
+.mission-report{
+  width:min(520px,92vw);background:var(--panel);border:1px solid var(--line);
+  padding:20px 22px 16px;text-align:left;box-shadow:0 0 40px rgba(99,216,200,.10);
+  margin-top:20px;opacity:0;transform:translateY(16px);transition:.6s;
+}
+.mission-report.show{opacity:1;transform:none;}
+.mission-report h2{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--green-bright);margin-bottom:12px;}
+.report-row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px dashed var(--line);color:var(--ink);}
+.report-row:last-child{border-bottom:none;}
+.report-row span{color:var(--ink-dim);font-family:var(--mono);font-size:12px;letter-spacing:1px;}
+.report-row b{color:var(--amber);font-family:var(--mono);}
+
+@media (max-width:380px){
+  .boot-titlebar{font-size:10px;}
+  #boot-text{font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-scan"></div>
+<div class="bg-vignette"></div>
+
+<div class="hud-corner tl"></div>
+<div class="hud-corner tr"></div>
+<div class="hud-corner bl"></div>
+<div class="hud-corner br"></div>
+
+<div id="crosshair"><div class="dot"></div></div>
+<canvas id="fx"></canvas>
+<div id="breach-flash"></div>
+<div id="bg-potatoes"></div>
+<div id="bg-stars"></div>
+<div id="killfeed"></div>
+<div id="shooting-star">🌠</div>
+<button id="btn-music">🎵 战歌</button>
+<div id="lightbox"><img id="lightbox-img" alt=""></div>
+
+<!-- ============ 1. 开机终端 ============ -->
+<section class="screen active" id="screen-boot">
+  <div class="boot-window">
+    <div class="boot-titlebar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span>DELTA FORCE // TACTICAL OS</span>
+    </div>
+    <div id="boot-text"></div>
+  </div>
+  <button id="boot-enter">▶ 进入作战</button>
+</section>
+
+<!-- ============ 2. 任务简报 ============ -->
+<section class="screen" id="screen-brief">
+  <div class="briefing-box">
+    <div class="stamp">机密 CLASSIFIED</div>
+    <div class="kicker">MISSION BRIEFING // 任务简报</div>
+    <h1>OPERATION BIRTHDAY</h1>
+    <div class="briefing-line"><span class="k">行动代号</span><span class="v hot">BIRTHDAY · 生日特别行动</span></div>
+    <div class="briefing-line"><span class="k">任务目标</span><span class="v" id="brief-name">谢晓玲 · 代号「土豆小姐」</span></div>
+    <div class="briefing-line"><span class="k">目标特征</span><span class="v">爱吃土豆 🥔 · 三角洲行动高手</span></div>
+    <div class="briefing-line"><span class="k">任务性质</span><span class="v">祝她生日快乐 · 最高优先级</span></div>
+    <div class="briefing-line"><span class="k">任务地点</span><span class="v">坐标已加密 🔒</span></div>
+    <div class="briefing-line"><span class="k">授权人</span><span class="v" id="brief-sender">【你的名字】</span></div>
+    <button id="btn-deploy">开始行动 ▶</button>
+  </div>
+</section>
+
+<!-- ============ 3. 破门 / 锁定 ============ -->
+<section class="screen" id="screen-breach">
+  <div class="breach-label">锁定目标 · 长按引爆</div>
+  <div class="radar">
+    <div class="sweep"></div>
+    <div class="ring"></div>
+    <div class="blip">🥔</div>
+  </div>
+  <div class="breach-hint">雷达已锁定目标「土豆小姐」</div>
+  <div id="hold-wrap">
+    <svg id="hold-ring" viewBox="0 0 170 170">
+      <circle class="track" cx="85" cy="85" r="80"></circle>
+      <circle class="fill" id="hold-fill" cx="85" cy="85" r="80"></circle>
+    </svg>
+    <button id="btn-breach"><span class="big">⚠</span><span>长按引爆</span></button>
+  </div>
+  <div id="lock-status"></div>
+</section>
+
+<!-- ============ 4. 庆祝 ============ -->
+<section class="screen" id="screen-celebrate">
+  <div class="celebrate-kicker">TARGET ACQUIRED // 目标已锁定</div>
+  <div class="celebrate-title">生日快乐</div>
+  <div class="celebrate-sub" id="celebrate-sub">谢晓玲 · 土豆小姐 🥔</div>
+
+  <div class="candles" id="candles"></div>
+  <div class="candle-hint">点击蜡烛 · 吹灭它们</div>
+  <div class="cake-zone"><div class="cake">🎂</div></div>
+
+  <div class="wish-card" id="wish-card">
+    <h2>// 作战指令 · 生日祝福</h2>
+    <ul id="wish-list"></ul>
+  </div>
+  <button id="btn-wish">🌠 许个愿</button>
+  <button id="btn-fire">🎆 点燃土豆烟花</button>
+
+  <div class="photo-wall" id="photo-wall">
+    <div class="photo-title">// 作战影像 · 目标档案</div>
+    <div class="photos" id="photos"></div>
+  </div>
+
+  <div class="mission-report" id="mission-report">
+    <h2>// 行动报告 · MISSION COMPLETE</h2>
+    <div class="report-row"><span>任务完成度</span><b>100%</b></div>
+    <div class="report-row"><span>目标锁定</span><b>✅ 土豆小姐</b></div>
+    <div class="report-row"><span>开心指数</span><b>MAX</b></div>
+    <div class="report-row"><span>土豆库存</span><b>∞ 管够</b></div>
+    <div class="report-row"><span>下次行动</span><b id="report-next">——</b></div>
+  </div>
+
+  <div class="countdown" id="countdown"></div>
+</section>
+
+<script>
+/* ============================================================
+   ★★★ 在这里改配置 —— 以后每年生日都不用再改代码 ★★★
+   ============================================================ */
+const CONFIG = {
+  herName:  "谢晓玲",          // 她的名字
+  codeName: "土豆小姐",        // 她的代号
+  lunarBirthday: { month: 11, day: 1 },  // ★ 农历生日：十一月初一（每年公历日期自动换算，无需改）
+  sender:   "鸡蛋先生",        // 你的名字
+  wishes: [                     // 祝福语，可自由增删
+    "在三角洲里你是我的最优队友，在现实里你是我最想保护的人。",
+    "愿你枪枪爆头、把把吃鸡、天天开心 —— 生日快乐，土豆小姐。",
+    "鸡蛋先生永远给土豆小姐留最热的那一份。",
+    "谢晓玲，生日快乐！愿你的每一天都像刚出锅的薯条一样香脆快乐。"
+  ],
+  photos: []                    // ★ 她的照片：填图片网址或 base64，例如 ["https://xx.jpg", "data:image/jpeg;base64,...."]
+};
+/* ============================================================ */
+
+const $ = (s)=>document.querySelector(s);
+const screens = {
+  boot:      $('#screen-boot'),
+  brief:     $('#screen-brief'),
+  breach:    $('#screen-breach'),
+  celebrate: $('#screen-celebrate'),
+};
+let cur = 'boot';
+function go(name){
+  screens[cur].classList.remove('active');
+  cur = name;
+  screens[cur].classList.add('active');
+  if(name!=='boot') $('#crosshair').style.opacity = '.35';
+  if(name==='boot') $('#crosshair').style.opacity = '0';
+}
+
+/* ---------- 填充署名 ---------- */
+$('#brief-name').textContent   = CONFIG.herName + ' · 代号「' + CONFIG.codeName + '」';
+$('#brief-sender').textContent = CONFIG.sender;
+$('#celebrate-sub').textContent = CONFIG.herName + ' · ' + CONFIG.codeName + ' 🥔';
+
+/* ---------- 音效（WebAudio，无需外部文件） ---------- */
+let AC=null;
+function beep(freq=660, dur=0.06, type='square', vol=0.04){
+  try{
+    if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);
+    o.connect(g).connect(AC.destination);
+    o.start();o.stop(AC.currentTime+dur);
+  }catch(e){}
+}
+
+/* ---------- 战歌（合成生日歌，循环播放） ---------- */
+const MELODY = [
+  [392,.35],[392,.35],[440,.7],[392,.7],[523,.7],[494,1.4],
+  [392,.35],[392,.35],[440,.7],[392,.7],[587,.7],[523,1.4],
+  [392,.35],[392,.35],[784,.7],[659,.7],[523,.7],[494,.7],[440,1.4],
+  [698,.35],[698,.35],[659,.7],[523,.7],[587,.7],[523,1.4]
+];
+let musicOn=false, musicTimer=null, musicIdx=0;
+function playNote(freq,dur){
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended') AC.resume();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='triangle'; o.frequency.value=freq;
+    const t=AC.currentTime;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.09,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g).connect(AC.destination);
+    o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function scheduleNext(){
+  if(!musicOn) return;
+  const n=MELODY[musicIdx % MELODY.length];
+  playNote(n[0], n[1]);
+  musicIdx++;
+  musicTimer=setTimeout(scheduleNext, n[1]*1000);
+}
+$('#btn-music').addEventListener('click', ()=>{
+  musicOn=!musicOn;
+  const b=$('#btn-music');
+  if(musicOn){ b.classList.add('on'); b.textContent='🎵 战歌 · 开'; scheduleNext(); }
+  else { b.classList.remove('on'); b.textContent='🎵 战歌'; clearTimeout(musicTimer); }
+});
+
+/* ---------- 开机终端打字 ---------- */
+const bootLines = [
+  "三角洲战术系统 · 生日特别行动版",
+  "DELTA FORCE // BIRTHDAY OPS  v5.2.0",
+  "引擎：三角洲战术终端 · 特别行动版",
+  "",
+  "[初始化核心模块] ......... 完成",
+  "[载入目标档案] ......... 完成",
+  "[目标：" + CONFIG.herName + " · 代号「" + CONFIG.codeName + "」]",
+  "[识别：爱吃土豆 · 擅长三角洲行动]",
+  "[校验授权人：" + CONFIG.sender + "] .......... 通过",
+  "[系统就绪]"
+];
+function typeBoot(){
+  const el = $('#boot-text');
+  let li=0, ci=0;
+  const full = bootLines.map(l=>l+(l===''?'':'\n')).join('');
+  (function step(){
+    if(li>=bootLines.length){
+      const c=document.createElement('span');c.className='caret';el.appendChild(c);
+      setTimeout(()=>$('#boot-enter').classList.add('show'), 250);
+      return;
+    }
+    const line = bootLines[li];
+    if(ci===0 && line!==''){ el.innerHTML += '&gt; '; }
+    if(ci<line.length){
+      el.innerHTML += line[ci];
+      ci++;
+      setTimeout(step, 14);
+    } else {
+      el.innerHTML += '\n';
+      li++; ci=0;
+      setTimeout(step, 90);
+    }
+  })();
+}
+
+/* ---------- 进入作战按钮 ---------- */
+$('#boot-enter').addEventListener('click', ()=>{
+  beep(520,.08);
+  go('brief');
+});
+/* 点击终端也可进入（微信里方便） */
+$('#screen-boot').addEventListener('click', (e)=>{
+  if($('#boot-enter').classList.contains('show')) $('#boot-enter').click();
+});
+
+/* ---------- 开始行动 ---------- */
+$('#btn-deploy').addEventListener('click', ()=>{
+  beep(440,.1);
+  go('breach');
+});
+
+/* ---------- 长按引爆 ---------- */
+const CIRC = 502; // 2πr, r=80
+const fill = $('#hold-fill');
+const btnB = $('#btn-breach');
+const statusEl = $('#lock-status');
+let holdStart=null, holdRAF=null, locked=false;
+
+function startHold(){
+  if(locked) return;
+  beep(300,.05,'sawtooth',.03);
+  holdStart = performance.now();
+  statusEl.textContent = '正在引爆… 保持按压';
+  holdRAF = requestAnimationFrame(tickHold);
+}
+function tickHold(){
+  const t = Math.min(1, (performance.now()-holdStart)/1600); // 1.6 秒
+  fill.style.strokeDashoffset = CIRC*(1-t);
+  if(t>=1){
+    locked = true;
+    fill.style.strokeDashoffset = 0;
+    statusEl.textContent = '💥 目标已锁定 · 破门成功';
+    beep(180,.02,'square',.06);beep(90,.25,'sawtooth',.06);
+    setTimeout(()=>{
+      const f=$('#breach-flash');f.classList.add('go');
+      setTimeout(()=>{ f.classList.remove('go'); go('celebrate'); buildCandles(); spawnPotatoes(); startKillfeed(); renderPhotos(); burst(25); }, 160);
+    }, 420);
+  } else {
+    holdRAF = requestAnimationFrame(tickHold);
+  }
+}
+function endHold(){
+  if(holdRAF){ cancelAnimationFrame(holdRAF); holdRAF=null; }
+  if(locked) return;
+  if(holdStart){ fill.style.strokeDashoffset = CIRC; statusEl.textContent=''; }
+  holdStart=null;
+}
+btnB.addEventListener('pointerdown',(e)=>{e.preventDefault();startHold();});
+btnB.addEventListener('pointerup',endHold);
+btnB.addEventListener('pointerleave',endHold);
+btnB.addEventListener('touchstart',(e)=>e.preventDefault(),{passive:false});
+btnB.addEventListener('contextmenu',(e)=>e.preventDefault());
+
+/* ---------- 蜡烛 ---------- */
+function buildCandles(){
+  const wrap=$('#candles'); wrap.innerHTML='';
+  const n=6;
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div');c.className='candle';
+    c.innerHTML='<div class="smoke"></div><div class="flame"></div><div class="stick"></div>';
+    c.addEventListener('click',()=>{
+      if(c.classList.contains('out'))return;
+      c.classList.add('out');
+      beep(700,.05,'sine',.03);
+      if([...wrap.children].every(x=>x.classList.contains('out'))){
+        $('#wish-card').classList.add('show');
+        $('#btn-wish').classList.add('show');
+        renderWishes();
+        burst(30);
+      }
+    });
+    wrap.appendChild(c);
+  }
+}
+function renderWishes(){
+  const ul=$('#wish-list');ul.innerHTML='';
+  CONFIG.wishes.forEach((w,i)=>{
+    const li=document.createElement('li');li.textContent=w;
+    li.style.opacity='0';li.style.transform='translateX(-10px)';
+    li.style.transition='opacity .5s '+(i*0.2)+'s, transform .5s '+(i*0.2)+'s';
+    ul.appendChild(li);
+  });
+  requestAnimationFrame(()=>{
+    [...ul.children].forEach(li=>{ li.style.opacity='1'; li.style.transform='none'; });
+  });
+}
+
+/* ---------- 漂浮土豆 + 闪烁星星 ---------- */
+function spawnPotatoes(){
+  const box=$('#bg-potatoes'); box.innerHTML='';
+  const emojis=['🥔','🥔','✨','🍟','🥔'];
+  for(let i=0;i<8;i++){
+    const s=document.createElement('span');
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left=(Math.random()*100)+'vw';
+    s.style.fontSize=(16+Math.random()*24)+'px';
+    s.style.animationDuration=(7+Math.random()*8)+'s';
+    s.style.animationDelay=(Math.random()*6)+'s';
+    box.appendChild(s);
+  }
+  const stars=$('#bg-stars'); stars.innerHTML='';
+  const starChars=['✦','·','★','✧'];
+  for(let i=0;i<28;i++){
+    const s=document.createElement('span');
+    s.textContent=starChars[Math.floor(Math.random()*starChars.length)];
+    s.style.left=(Math.random()*100)+'vw';
+    s.style.top=(Math.random()*100)+'vh';
+    s.style.fontSize=(6+Math.random()*10)+'px';
+    s.style.animationDuration=(1.5+Math.random()*3)+'s';
+    s.style.animationDelay=(Math.random()*3)+'s';
+    stars.appendChild(s);
+  }
+}
+
+/* ---------- 击杀播报 ---------- */
+const KF_MSGS=['🥔 目标「土豆小姐」已锁定 ✅','🎂 生日蛋糕 · 空投成功','💛 快乐指数 +999','🍟 薯条补给 · 已送达','✨ 愿望 · 上传中','🏆 三角洲 · 年度最佳队友','🎯 命中靶心 · 满分'];
+let kfTimer=null;
+function startKillfeed(){
+  if(kfTimer) clearInterval(kfTimer);
+  const box=$('#killfeed'); box.innerHTML='';
+  function push(){
+    const m=KF_MSGS[Math.floor(Math.random()*KF_MSGS.length)];
+    const el=document.createElement('div');
+    el.className='kf'+(Math.random()<0.3?' warn':'');
+    el.textContent=m;
+    box.appendChild(el);
+    while(box.children.length>4) box.removeChild(box.firstChild);
+  }
+  push(); push();
+  kfTimer=setInterval(push, 2200);
+}
+
+/* ---------- 点击任意处放烟花 ---------- */
+$('#screen-celebrate').addEventListener('pointerdown', (e)=>{
+  if(e.target.closest('button')) return;
+  burst(16, e.clientX, e.clientY);
+  beep(500+Math.random()*500, .05, 'square', .02);
+});
+
+/* ---------- 照片墙 ---------- */
+function renderPhotos(){
+  const box=$('#photos'); box.innerHTML='';
+  if(!CONFIG.photos || CONFIG.photos.length===0){
+    const d=document.createElement('div');
+    d.className='photo-frame';
+    d.innerHTML='<div class="photo-empty">📷 待添加照片<br>在文件顶部 CONFIG.photos 里填</div>';
+    box.appendChild(d);
+    return;
+  }
+  CONFIG.photos.forEach((src,i)=>{
+    const f=document.createElement('div');
+    f.className='photo-frame';
+    f.innerHTML='<img src="'+src+'" alt=""><div class="cap">SHOT · '+(i+1)+'</div>';
+    f.addEventListener('click', ()=>{
+      $('#lightbox-img').src=src;
+      $('#lightbox').classList.add('show');
+    });
+    box.appendChild(f);
+  });
+}
+$('#lightbox').addEventListener('click', ()=>{ $('#lightbox').classList.remove('show'); });
+
+/* ---------- 许愿 + 流星 + 行动报告 ---------- */
+function shootStar(){
+  const star=$('#shooting-star');
+  star.classList.remove('go');
+  void star.offsetWidth;
+  star.classList.add('go');
+}
+$('#btn-wish').addEventListener('click', ()=>{
+  beep(1000,.1,'sine',.05);
+  shootStar();
+  setTimeout(()=>{
+    $('#mission-report').classList.add('show');
+    const info=nextBirthdayInfo();
+    $('#report-next').textContent = info.isToday ? '今天 🎂' : (info.days+' 天后 · '+info.dateStr);
+    burst(45, innerWidth*0.3, innerHeight*0.3);
+  }, 950);
+});
+
+/* ---------- 农历换算（1900-2100） ---------- */
+const LUNAR_INFO = [
+0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,
+0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,
+0x0a2e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,
+0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,
+0x0d520
+];
+function lunarLeapMonth(y){ const lm=LUNAR_INFO[y-1900]&0xf; return lm===0xf?0:lm; }
+function lunarLeapDays(y){ if(lunarLeapMonth(y)) return (LUNAR_INFO[y-1900]&0x10000)?30:29; return 0; }
+function lunarMonthDays(y,m){ return (LUNAR_INFO[y-1900]&(0x10000>>m))?30:29; }
+function lunarYearDays(y){ let s=348; for(let i=0x8000;i>0x8;i>>=1){ if(LUNAR_INFO[y-1900]&i) s++; } return s+lunarLeapDays(y); }
+function solarToLunar(y,m,d){
+  const base=Date.UTC(1900,0,31), target=Date.UTC(y,m-1,d);
+  let offset=Math.round((target-base)/86400000), year=1900, temp=0;
+  while(year<=2100 && offset>0){ temp=lunarYearDays(year); offset-=temp; year++; }
+  if(offset<0){ offset+=temp; year--; }
+  const leap=lunarLeapMonth(year);
+  let isLeap=false, month=1;
+  while(month<=12 && offset>0){
+    if(leap>0 && month===leap+1 && !isLeap){ month--; isLeap=true; temp=lunarLeapDays(year); }
+    else { temp=lunarMonthDays(year,month); }
+    if(offset<temp) break;
+    offset-=temp;
+    if(isLeap && month===leap+1) isLeap=false;
+    month++;
+  }
+  return { year:year, month:month, day:offset+1, leap:isLeap };
+}
+function lunarToSolar(ly,lm,ld){
+  const start=Date.UTC(ly,8,1), end=Date.UTC(ly+1,2,1);
+  for(let t=start;t<=end;t+=86400000){
+    const dt=new Date(t), y=dt.getUTCFullYear(), m=dt.getUTCMonth()+1, d=dt.getUTCDate();
+    const r=solarToLunar(y,m,d);
+    if(r.year===ly && r.month===lm && r.day===ld && !r.leap) return {y:y,m:m,d:d};
+  }
+  return null;
+}
+
+/* ---------- 倒计时（长期可用 · 按农历生日自动换算） ---------- */
+function nextBirthdayInfo(){
+  const now=new Date();
+  const ty=now.getFullYear(), tm=now.getMonth()+1, td=now.getDate();
+  const todayUtc=Date.UTC(ty,tm-1,td);
+  const lm=CONFIG.lunarBirthday.month, ld=CONFIG.lunarBirthday.day;
+  const t=solarToLunar(ty,tm,td);
+  let hit=null;
+  for(let ly=t.year; ly<=t.year+1; ly++){
+    const s=lunarToSolar(ly,lm,ld);
+    if(!s) continue;
+    if(Date.UTC(s.y,s.m-1,s.d)>=todayUtc){ hit={y:s.y,m:s.m,d:s.d}; break; }
+  }
+  if(!hit && t.year<=2099){ const s=lunarToSolar(t.year+1,lm,ld); if(s) hit={y:s.y,m:s.m,d:s.d}; }
+  if(!hit) return { isToday:false, days:null, dateStr:'农历十一月初一' };
+  const bdayUtc=Date.UTC(hit.y,hit.m-1,hit.d);
+  const isToday = bdayUtc===todayUtc;
+  const days = isToday ? 0 : Math.round((bdayUtc-todayUtc)/86400000);
+  return { isToday:isToday, days:days, dateStr:hit.y+'年'+hit.m+'月'+hit.d+'日' };
+}
+function renderCountdown(){
+  const el=$('#countdown');
+  const info=nextBirthdayInfo();
+  if(info.isToday){
+    el.innerHTML='🎂 今天就是你的生日（农历十一月初一）· <b>HAPPY BIRTHDAY!</b>';
+  } else {
+    el.innerHTML='距下一次生日（农历十一月初一）还有 <b>'+info.days+'</b> 天 · 即 '+info.dateStr;
+  }
+}
+
+/* ---------- 土豆烟花（轻量版，防卡顿） ---------- */
+const fx=$('#fx'), fctx=fx.getContext('2d');
+let parts=[];
+function sizeFx(){fx.width=innerWidth;fx.height=innerHeight;}
+sizeFx();addEventListener('resize',sizeFx);
+const EMO=['🥔','🎂','✨','💛','🍟'];
+const PALETTE=['#e8a33d','#8fb573','#e0523f','#63d8c8','#f4e6c8','#b6d99a'];
+function burst(n, x, y){
+  if(x===undefined) x=innerWidth/2;
+  if(y===undefined) y=innerHeight*0.42;
+  if(parts.length>150) return;
+  for(let i=0;i<n;i++){
+    const isEmoji = Math.random()<0.15;
+    parts.push({
+      x:x+(Math.random()-.5)*80, y:y+(Math.random()-.5)*40,
+      vx:(Math.random()-.5)*7.5, vy:(Math.random()-.5)*7.5-3.5,
+      g:.14, life:0, max:50+Math.random()*30,
+      e: isEmoji ? EMO[Math.floor(Math.random()*EMO.length)] : null,
+      c: isEmoji ? null : PALETTE[Math.floor(Math.random()*PALETTE.length)],
+      s: isEmoji ? 12+Math.random()*10 : 4+Math.random()*6
+    });
+  }
+  if(!fx.on){ fx.on=true; requestAnimationFrame(loopFx); }
+}
+function loopFx(){
+  fctx.clearRect(0,0,fx.width,fx.height);
+  for(let i=0;i<parts.length;i++){
+    const p=parts[i];
+    p.life++; p.x+=p.vx; p.y+=p.vy; p.vy+=p.g;
+    if(p.life>=p.max) continue;
+    fctx.globalAlpha=1-p.life/p.max;
+    if(p.e){ fctx.font=p.s+'px serif'; fctx.textAlign='center'; fctx.textBaseline='middle'; fctx.fillText(p.e,p.x,p.y); }
+    else { fctx.fillStyle=p.c; fctx.fillRect(p.x,p.y,p.s,p.s); }
+  }
+  parts=parts.filter(p=>p.life<p.max);
+  fctx.globalAlpha=1;
+  if(parts.length) requestAnimationFrame(loopFx); else fx.on=false;
+}
+$('#btn-fire').addEventListener('click',()=>{
+  beep(880,.12,'square',.05);
+  burst(55);
+  setTimeout(()=>burst(40, innerWidth/2+60, innerHeight*0.4),200);
+});
+
+/* ---------- 准星跟随 ---------- */
+const ch=$('#crosshair');
+addEventListener('pointermove',(e)=>{
+  ch.style.left=e.clientX+'px';ch.style.top=e.clientY+'px';
+});
+/* 触屏上隐藏系统光标下的准星震动感 */
+addEventListener('pointerdown',(e)=>{
+  if(cur!=='boot'){ ch.style.left=e.clientX+'px';ch.style.top=e.clientY+'px'; }
+});
+
+/* ---------- 启动 ---------- */
+typeBoot();
+renderCountdown();
+</script>
+</body>
+</html>
