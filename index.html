@@ -297,26 +297,34 @@ body{
 }
 .countdown b{color:var(--green-bright);font-size:14px;}
 
-/* 照片墙 */
+/* 照片墙（拍立得风） */
 .photo-wall{width:min(520px,92vw);margin-top:24px;}
-.photo-title{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--amber);margin-bottom:12px;text-align:left;}
-.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;}
+.photo-title{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--amber);margin-bottom:14px;text-align:left;}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:22px 14px;padding:10px 2px 6px;}
 .photo-frame{
-  position:relative;aspect-ratio:3/4;background:var(--panel2);
-  border:1px solid var(--line);overflow:hidden;cursor:pointer;
-  border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.35);
+  position:relative;background:#faf6ea;padding:9px 9px 32px;
+  border-radius:3px;box-shadow:0 8px 20px rgba(0,0,0,.45);
+  cursor:pointer;transition:transform .25s;
 }
-.photo-add{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--panel);box-shadow:none;}
-.photo-add-inner{color:var(--ink-dim);font-family:var(--mono);font-size:13px;letter-spacing:1px;text-align:center;line-height:1.9;}
-.photo-frame::before,.photo-frame::after{content:"";position:absolute;width:16px;height:16px;pointer-events:none;z-index:2;}
-.photo-frame::before{top:0;left:0;border-top:2px solid var(--green);border-left:2px solid var(--green);}
-.photo-frame::after{bottom:0;right:0;border-bottom:2px solid var(--green);border-right:2px solid var(--green);}
-.photo-frame img{width:100%;height:100%;object-fit:cover;display:block;}
-.photo-frame .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;font-family:var(--mono);
-  font-size:10px;letter-spacing:1px;color:var(--ink);background:linear-gradient(transparent, rgba(0,0,0,.75));
-  padding:14px 6px 5px;text-align:left;}
-.photo-empty{display:flex;align-items:center;justify-content:center;height:100%;
-  font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:1px;text-align:center;padding:12px;line-height:1.8;}
+.photo-frame:nth-child(odd){transform:rotate(-2.2deg);}
+.photo-frame:nth-child(even){transform:rotate(1.8deg) translateY(10px);}
+.photo-frame:active{transform:rotate(0) scale(1.03);}
+.photo-frame::before{
+  content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);
+  width:56px;height:18px;background:rgba(232,163,61,.55);
+  box-shadow:0 1px 3px rgba(0,0,0,.25);z-index:3;
+}
+.photo-frame img{width:100%;display:block;border-radius:1px;aspect-ratio:3/4;object-fit:cover;filter:saturate(1.06);}
+.photo-frame .cap{
+  position:absolute;left:0;right:0;bottom:9px;text-align:center;
+  font-family:"Segoe Script","Comic Sans MS","KaiTi","STKaiti",cursive;
+  font-size:13px;color:#8a6a3a;letter-spacing:1px;
+}
+.photo-del{position:absolute;top:-9px;right:-9px;z-index:5;width:22px;height:22px;border-radius:50%;
+  background:#e0523f;color:#fff;font-size:12px;line-height:22px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+.photo-add{display:flex;align-items:center;justify-content:center;min-height:150px;background:rgba(250,246,234,.1);border:1px dashed rgba(143,181,115,.55);box-shadow:none;transform:none !important;}
+.photo-add::before{display:none;}
+.photo-add-inner{color:var(--ink-dim);font-family:var(--mono);font-size:12px;letter-spacing:1px;text-align:center;line-height:1.9;}
 
 /* 灯箱 */
 #lightbox{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;cursor:pointer;}
@@ -808,11 +816,44 @@ $('#screen-celebrate').addEventListener('pointerdown', (e)=>{
   beep(500+Math.random()*500, .05, 'square', .02);
 });
 
-/* ---------- 照片墙（支持自己上传） ---------- */
-function addPhotoFrame(box, src, cap){
+/* ---------- 照片墙（拍立得 + 本地保存） ---------- */
+const PHOTO_KEY = 'bday_photos_v1';
+let photoStore = [];
+try { photoStore = JSON.parse(localStorage.getItem(PHOTO_KEY)||'[]'); } catch(e){ photoStore=[]; }
+function savePhotos(){ try { localStorage.setItem(PHOTO_KEY, JSON.stringify(photoStore)); } catch(e){} }
+
+function compressImage(file, maxW, cb){
+  const reader = new FileReader();
+  reader.onload = function(){
+    const img = new Image();
+    img.onload = function(){
+      const scale = Math.min(1, maxW / img.width);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*scale);
+      c.height = Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      cb(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addPhotoFrame(box, src, cap, deletable){
   const f=document.createElement('div');
   f.className='photo-frame';
   f.innerHTML='<img src="'+src+'" alt=""><div class="cap">'+cap+'</div>';
+  if(deletable){
+    const x=document.createElement('div');
+    x.className='photo-del';
+    x.textContent='✕';
+    x.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      const idx=photoStore.indexOf(src);
+      if(idx>=0){ photoStore.splice(idx,1); savePhotos(); renderPhotos(); }
+    });
+    f.appendChild(x);
+  }
   f.addEventListener('click', ()=>{ $('#lightbox-img').src=src; $('#lightbox').classList.add('show'); });
   box.appendChild(f);
 }
@@ -826,16 +867,18 @@ function addPhotoAdder(box){
 function renderPhotos(){
   const box=$('#photos'); box.innerHTML='';
   (CONFIG.photos||[]).forEach((src,i)=>{ addPhotoFrame(box, src, 'SHOT · '+(i+1)); });
+  photoStore.forEach((src,i)=>{ addPhotoFrame(box, src, 'MEMORY · '+(i+1), true); });
   addPhotoAdder(box);
 }
 $('#photo-input').addEventListener('change', (e)=>{
-  const box=$('#photos');
-  const files=e.target.files;
-  const adder=box.querySelector('.photo-add'); if(adder) adder.remove();
-  for(let i=0;i<files.length;i++){
-    addPhotoFrame(box, URL.createObjectURL(files[i]), 'NEW · '+(i+1));
-  }
-  addPhotoAdder(box);
+  const files = Array.prototype.slice.call(e.target.files);
+  let n = files.length;
+  files.forEach((file)=>{
+    compressImage(file, 900, (dataUrl)=>{
+      photoStore.push(dataUrl);
+      if(--n === 0){ savePhotos(); renderPhotos(); }
+    });
+  });
   e.target.value='';
 });
 $('#lightbox').addEventListener('click', ()=>{ $('#lightbox').classList.remove('show'); });
